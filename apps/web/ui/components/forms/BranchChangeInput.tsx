@@ -13,6 +13,7 @@ import { useState } from "react";
 import {
   App,
   AppByIdDocument,
+  useBranchesLazyQuery,
   useBranchesQuery,
   useChangeAppBranchMutation,
   useGithubInstallationIdQuery,
@@ -28,11 +29,17 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
 
   const [changeBranch, { loading }] = useChangeAppBranchMutation();
   const [name, setName] = useState(ghInfo?.branch ?? "");
-  const { data: id, loading: loadingId } = useGithubInstallationIdQuery();
-  const { data: branches, loading: loadingBranches } = useBranchesQuery({
-    variables: {
-      repositoryName: ghInfo?.repoName ?? "",
-      installationId: id?.githubInstallationId.id ?? "",
+
+  const [fetchBranches, { data: branches, loading: loadingBranches }] =
+    useBranchesLazyQuery();
+  const { loading: loadingId } = useGithubInstallationIdQuery({
+    onCompleted(data) {
+      fetchBranches({
+        variables: {
+          installationId: data.githubInstallationId.id,
+          repositoryName: `${ghInfo?.repoOwner}/${ghInfo?.repoName}`,
+        },
+      });
     },
   });
 
