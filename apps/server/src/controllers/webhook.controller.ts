@@ -5,10 +5,10 @@ import { ContentType, Post, Returns } from "@tsed/schema";
 import { verifyWebhookSecret } from "../lib/webhooks/verifyGithubSecret";
 import { GithubRepository } from "./../modules/github/data/repositories/github.repository";
 
-class GitNode {
+type GitNode = {
   id: number;
   node_id: string;
-}
+};
 
 @Controller("/webhooks")
 export class WebhookController {
@@ -20,8 +20,8 @@ export class WebhookController {
   async onMessage(
     @HeaderParams("x-github-event") githubEvent: string,
     @HeaderParams("x-hub-signature-256") secret: string,
-    @BodyParams("installation", GitNode) installation: GitNode,
-    @BodyParams("repository", GitNode) repository: GitNode,
+    @BodyParams("installation") installation: GitNode,
+    @BodyParams("repository") repository: GitNode,
     @BodyParams("ref") ref: string,
     @BodyParams("pusher") pusher: any,
     @RawBodyParams()
