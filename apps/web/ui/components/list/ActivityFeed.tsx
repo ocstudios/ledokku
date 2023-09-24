@@ -53,7 +53,7 @@ export const ActivityItem = ({ activity }: { activity: Activity }) => {
           </div>
         </div>
 
-        <div className="flex flex-col w-fit">
+        <div className="flex flex-col w-fit whitespace-nowrap">
           <p className="text-sm">
             {DateTime.fromISO(activity.createdAt).toFormat(
               "dd/MM/yyyy HH:mm:ss"

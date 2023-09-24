@@ -16,10 +16,9 @@ export const AppHeaderInfo = ({ domains }: AppHeaderInfoProps) => {
   return (
     <div>
       {app?.status === AppStatus.Building && (
-        <>
+        <div className="mb-4">
           <BuildingAlert app={app as any} />
-          <Spacer />
-        </>
+        </div>
       )}
       <div className="flex justify-between md:items-end flex-col md:flex-row gap-4">
         <h2>{app.name}</h2>
