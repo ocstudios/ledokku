@@ -27,8 +27,8 @@ export class WebhookController {
     @RawBodyParams()
     rawBody: any
   ): Promise<any> {
-    console.log("installation", installation);
-    console.log("repository", repository);
+    $log.info("installation", installation);
+    $log.info("repository", repository);
 
     if (githubEvent === "push") {
       try {
