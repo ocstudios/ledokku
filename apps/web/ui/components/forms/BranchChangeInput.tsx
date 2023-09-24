@@ -3,6 +3,7 @@ import {
   Input,
   Modal,
   ModalBody,
+  ModalContent,
   ModalFooter,
   ModalHeader,
   Select,
@@ -51,52 +52,54 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
         isOpen={ghInfo.branch !== name}
         onClose={() => setName(ghInfo.branch)}
       >
-        <ModalHeader>
-          <h4>Cambiar rama</h4>
-        </ModalHeader>
-        <ModalBody>
-          <div>
-            ¿Deseas cambiar el nombre de la rama de <b>{ghInfo.branch}</b> a{" "}
-            <b>{name}</b>?
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="danger"
-            size="sm"
-            onClick={() => setName(ghInfo.branch)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            size="sm"
-            onClick={
-              loading
-                ? undefined
-                : () => {
-                    changeBranch({
-                      variables: {
-                        input: {
-                          appId: app.id,
-                          branchName: name,
+        <ModalContent>
+          <ModalHeader>
+            <h4>Cambiar rama</h4>
+          </ModalHeader>
+          <ModalBody>
+            <div>
+              ¿Deseas cambiar el nombre de la rama de <b>{ghInfo.branch}</b> a{" "}
+              <b>{name}</b>?
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="danger"
+              size="sm"
+              onClick={() => setName(ghInfo.branch)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={
+                loading
+                  ? undefined
+                  : () => {
+                      changeBranch({
+                        variables: {
+                          input: {
+                            appId: app.id,
+                            branchName: name,
+                          },
                         },
-                      },
-                      refetchQueries: [AppByIdDocument],
-                    })
-                      .then((res) => {
-                        setName(ghInfo.branch);
-                        toast.success("Rama actualizada");
+                        refetchQueries: [AppByIdDocument],
                       })
-                      .catch((e) => {
-                        toast.error("Rama no actualizada");
-                      });
-                  }
-            }
-            isLoading={loading}
-          >
-            Cambiar
-          </Button>
-        </ModalFooter>
+                        .then((res) => {
+                          setName(ghInfo.branch);
+                          toast.success("Rama actualizada");
+                        })
+                        .catch((e) => {
+                          toast.error("Rama no actualizada");
+                        });
+                    }
+              }
+              isLoading={loading}
+            >
+              Cambiar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
       </Modal>
       <Select
         label="Rama a lanzar"
@@ -109,13 +112,11 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
           }
         }}
       >
-        {branches?.branches
-          .filter((it) => it.name !== ghInfo.branch)
-          .map((it) => (
-            <SelectItem key={it.name} value={it.name}>
-              {it.name}
-            </SelectItem>
-          )) ?? []}
+        {branches?.branches.map((it) => (
+          <SelectItem key={it.name} value={it.name}>
+            {it.name}
+          </SelectItem>
+        )) ?? []}
       </Select>
     </div>
   );
