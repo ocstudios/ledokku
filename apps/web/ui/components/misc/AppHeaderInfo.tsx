@@ -14,7 +14,7 @@ export const AppHeaderInfo = ({ domains }: AppHeaderInfoProps) => {
   const app = useAppContext();
 
   return (
-    <>
+    <div>
       {app?.status === AppStatus.Building && (
         <>
           <BuildingAlert app={app as any} />
@@ -48,6 +48,6 @@ export const AppHeaderInfo = ({ domains }: AppHeaderInfoProps) => {
           </Link>
         </div>
       </div>
-    </>
+    </div>
   );
 };
