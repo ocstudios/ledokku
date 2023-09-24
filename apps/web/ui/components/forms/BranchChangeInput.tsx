@@ -29,10 +29,14 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
   const ghInfo = app.appMetaGithub;
 
   const [changeBranch, { loading }] = useChangeAppBranchMutation();
-  const [name, setName] = useState(ghInfo?.branch ?? "");
+  const [name, setName] = useState(undefined as string | undefined);
 
   const [fetchBranches, { data: branches, loading: loadingBranches }] =
-    useBranchesLazyQuery();
+    useBranchesLazyQuery({
+      onCompleted(data) {
+        setName(ghInfo?.branch);
+      },
+    });
   const { loading: loadingId } = useGithubInstallationIdQuery({
     onCompleted(data) {
       fetchBranches({
