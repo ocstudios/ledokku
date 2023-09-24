@@ -37,32 +37,26 @@ export const AppSettingsMenu = () => {
         <NavbarItem
           className="p-4 h-fit"
           isActive={selectedRoute === "general"}
+          as={Link}
+          href={`/dashboard/apps/${app.id}/settings/`}
         >
-          <Link
-            className="text-white"
-            href={`/dashboard/apps/${app.id}/settings/`}
-          >
-            General
-          </Link>
-        </NavbarItem>
-        <NavbarItem className="p-4 h-fit" isActive={selectedRoute === "ports"}>
-          <Link
-            className="text-white"
-            href={`/dashboard/apps/${app.id}/settings/ports`}
-          >
-            Configuración de puertos
-          </Link>
+          General
         </NavbarItem>
         <NavbarItem
           className="p-4 h-fit"
-          isActive={selectedRoute === "domains"}
+          isActive={selectedRoute === "ports"}
+          as={Link}
+          href={`/dashboard/apps/${app.id}/settings/ports`}
         >
-          <Link
-            className="text-white"
-            href={`/dashboard/apps/${app.id}/settings/domains`}
-          >
-            Dominios
-          </Link>
+          Configuración de puertos
+        </NavbarItem>
+        <NavbarItem
+          className="p-4 h-fit"
+          as={Link}
+          isActive={selectedRoute === "domains"}
+          href={`/dashboard/apps/${app.id}/settings/domains`}
+        >
+          Dominios
         </NavbarItem>
       </NavbarContent>
     </Navbar>

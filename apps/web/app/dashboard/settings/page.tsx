@@ -27,6 +27,7 @@ import {
   useRemoveAllowedUserMutation,
 } from "@/generated/graphql";
 import toast from "react-hot-toast";
+import { FiUserPlus } from "react-icons/fi";
 
 const Settings = () => {
   const { data, loading } = useAllowedUsersQuery();
@@ -56,6 +57,8 @@ const Settings = () => {
               setShowAddUser(true);
             }}
             isLoading={loadingAddUser}
+            color="primary"
+            startContent={<FiUserPlus />}
           >
             Agregar usuario
           </Button>

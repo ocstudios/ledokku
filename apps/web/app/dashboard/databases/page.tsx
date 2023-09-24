@@ -29,8 +29,8 @@ const Databases = () => {
 
   return (
     <div>
-      <div className="flex flex-row justify-between w-full">
-        <h2 className="mb-8">Bases de datos</h2>
+      <div className="flex flex-row justify-between w-full mb-4">
+        <h2>Bases de datos</h2>
         <Button
           as={Link}
           href="/dashboard/create/database"

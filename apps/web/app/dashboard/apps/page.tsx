@@ -84,6 +84,7 @@ const Apps = () => {
         <h2>Aplicaciones</h2>
         <Button
           href="/dashboard/create/app"
+          as={Link}
           color="primary"
           startContent={<FiServer />}
         >

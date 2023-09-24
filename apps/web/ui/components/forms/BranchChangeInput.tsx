@@ -5,13 +5,17 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Select,
+  SelectItem,
   Spinner,
 } from "@nextui-org/react";
 import { useState } from "react";
 import {
   App,
   AppByIdDocument,
+  useBranchesQuery,
   useChangeAppBranchMutation,
+  useGithubInstallationIdQuery,
 } from "@/generated/graphql";
 import toast from "react-hot-toast";
 
@@ -24,13 +28,22 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
 
   const [changeBranch, { loading }] = useChangeAppBranchMutation();
   const [name, setName] = useState(ghInfo?.branch ?? "");
-  const [showChangeModal, setShowChangeModal] = useState(false);
+  const { data: id, loading: loadingId } = useGithubInstallationIdQuery();
+  const { data: branches, loading: loadingBranches } = useBranchesQuery({
+    variables: {
+      repositoryName: ghInfo?.repoName ?? "",
+      installationId: id?.githubInstallationId.id ?? "",
+    },
+  });
 
   if (!ghInfo) return <></>;
 
   return (
     <div>
-      <Modal isOpen={showChangeModal} onClose={() => setShowChangeModal(false)}>
+      <Modal
+        isOpen={ghInfo.branch !== name}
+        onClose={() => setName(ghInfo.branch)}
+      >
         <ModalHeader>
           <h4>Cambiar rama</h4>
         </ModalHeader>
@@ -44,7 +57,7 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
           <Button
             color="danger"
             size="sm"
-            onClick={() => setShowChangeModal(false)}
+            onClick={() => setName(ghInfo.branch)}
           >
             Cancelar
           </Button>
@@ -64,7 +77,7 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
                       refetchQueries: [AppByIdDocument],
                     })
                       .then((res) => {
-                        setShowChangeModal(false);
+                        setName(ghInfo.branch);
                         toast.success("Rama actualizada");
                       })
                       .catch((e) => {
@@ -78,24 +91,25 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
           </Button>
         </ModalFooter>
       </Modal>
-      <Input
+      <Select
+        label="Rama a lanzar"
         placeholder="Ej. master, dev, feat"
-        label="Nombre de la rama"
         value={name}
-        onChange={(e) => setName(e.currentTarget.value)}
-        width="300px"
-        endContent={
-          <Button
-            size="sm"
-            disabled={ghInfo.branch === name || !name}
-            onClick={() => setShowChangeModal(true)}
-            variant="solid"
-            color="primary"
-          >
-            Cambiar
-          </Button>
-        }
-      />
+        isLoading={loadingBranches || loadingId}
+        onSelectionChange={(keys) => {
+          if (keys instanceof Set) {
+            setName(keys.values().next().value);
+          }
+        }}
+      >
+        {branches?.branches
+          .filter((it) => it.name !== ghInfo.branch)
+          .map((it) => (
+            <SelectItem key={it.name} value={it.name}>
+              {it.name}
+            </SelectItem>
+          )) ?? []}
+      </Select>
     </div>
   );
 };

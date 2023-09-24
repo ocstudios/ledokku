@@ -20,7 +20,7 @@ const SourceBox = ({ label, icon, type, badge, disabled }: SourceBoxProps) => {
       className={disabled ? "pointer-events-none" : ""}
     >
       <div
-        className={`w-full h-full border-solid px-16 py-12 flex flex-col border-3 items-center justify-center rounded-2xl ${
+        className={`w-full h-full border-solid border-divider px-16 py-12 flex flex-col border-3 items-center justify-center rounded-2xl ${
           !disabled
             ? `grayscale-0 opacity-100 cursor-pointer hover:bg-[#7a7a7a1f]`
             : "grayscale-1 opacity-50 border-gray-600"
