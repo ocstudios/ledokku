@@ -40,7 +40,7 @@ export const AppSettingsMenu = () => {
         >
           <Link
             className="text-white"
-            href={`/dashboard/apps/${app.id}/settings/general`}
+            href={`/dashboard/apps/${app.id}/settings/`}
           >
             General
           </Link>
