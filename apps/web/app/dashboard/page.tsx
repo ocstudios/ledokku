@@ -83,7 +83,7 @@ export default function Dashboard() {
         <div className="xl:w-1/3">
           <div className="flex justify-between">
             <h2 className="mb-4">Última actividad</h2>
-            <Button variant="ghost" as={Link} href="/activity">
+            <Button variant="ghost" as={Link} href="/dashboard/activity">
               Ver más...
             </Button>
           </div>
