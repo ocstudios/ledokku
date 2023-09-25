@@ -10,7 +10,7 @@ import {
   SelectItem,
   Spinner,
 } from "@nextui-org/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   App,
   AppByIdDocument,
@@ -32,11 +32,7 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
   const [name, setName] = useState(undefined as string | undefined);
 
   const [fetchBranches, { data: branches, loading: loadingBranches }] =
-    useBranchesLazyQuery({
-      onCompleted(data) {
-        setName(ghInfo?.branch);
-      },
-    });
+    useBranchesLazyQuery();
   const { loading: loadingId } = useGithubInstallationIdQuery({
     onCompleted(data) {
       fetchBranches({
@@ -48,12 +44,18 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
     },
   });
 
+  useEffect(() => {
+    if (branches && branches.branches.length > 0){
+      setName(branches.branches[0].name)
+    }
+  }, [branches])
+
   if (!ghInfo) return <></>;
 
   return (
     <div>
       <Modal
-        isOpen={ghInfo.branch !== name}
+        isOpen={ghInfo.branch !== name && !loading}
         onClose={() => setName(ghInfo.branch)}
       >
         <ModalContent>
