@@ -76,28 +76,25 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
             </Button>
             <Button
               size="sm"
-              onClick={
-                loading
-                  ? undefined
-                  : () => {
-                      changeBranch({
-                        variables: {
-                          input: {
-                            appId: app.id,
-                            branchName: name,
-                          },
-                        },
-                        refetchQueries: [AppByIdDocument],
-                      })
-                        .then((res) => {
-                          setName(ghInfo.branch);
-                          toast.success("Rama actualizada");
-                        })
-                        .catch((e) => {
-                          toast.error("Rama no actualizada");
-                        });
-                    }
-              }
+              isDisabled={!name || name === ghInfo.branch}
+              onClick={() => {
+                changeBranch({
+                  variables: {
+                    input: {
+                      appId: app.id,
+                      branchName: name!,
+                    },
+                  },
+                  refetchQueries: [AppByIdDocument],
+                })
+                  .then((res) => {
+                    setName(ghInfo.branch);
+                    toast.success("Rama actualizada");
+                  })
+                  .catch((e) => {
+                    toast.error("Rama no actualizada");
+                  });
+              }}
               isLoading={loading}
             >
               Cambiar
