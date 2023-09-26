@@ -45,10 +45,10 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
   });
 
   useEffect(() => {
-    if (branches && branches.branches.length > 0){
-      setName(branches.branches[0].name)
+    if (branches) {
+      setName(ghInfo?.branch);
     }
-  }, [branches])
+  }, [branches, ghInfo]);
 
   if (!ghInfo) return <></>;
 
