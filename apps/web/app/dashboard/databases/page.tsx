@@ -76,7 +76,7 @@ const Databases = () => {
             <TableRow key={index}>
               <TableCell>
                 <Link href={`/dashboard/databases/${it.id}`}>
-                  <h4>{it.name}</h4>
+                  <h5>{it.name}</h5>
                 </Link>
               </TableCell>
               <TableCell>{it.type}</TableCell>
