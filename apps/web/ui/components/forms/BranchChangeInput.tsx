@@ -49,6 +49,7 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
       <Modal
         isOpen={!!ghInfo.branch && !!branches && ghInfo.branch !== name}
         onClose={() => setName(ghInfo.branch)}
+        backdrop="blur"
       >
         <ModalContent>
           <ModalHeader>
