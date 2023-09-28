@@ -1,10 +1,10 @@
-import { $log } from '@tsed/common';
-import { Injectable } from '@tsed/di';
-import { InternalServerError } from '@tsed/exceptions';
-import e from 'express';
-import { NodeSSH, SSHExecOptions } from 'node-ssh';
-import { execSSHCommand } from '../ssh';
-import { EnvVar } from './models/env_var.model';
+import { $log } from "@tsed/common";
+import { Injectable } from "@tsed/di";
+import { InternalServerError } from "@tsed/exceptions";
+import e from "express";
+import { NodeSSH, SSHExecOptions } from "node-ssh";
+import { execSSHCommand } from "../ssh";
+import { EnvVar } from "./models/env_var.model";
 
 @Injectable()
 export class DokkuAppRepository {
@@ -34,7 +34,7 @@ export class DokkuAppRepository {
 
   async setBuilder(
     appName: string,
-    builder: 'dockerfile' | 'herokuish'
+    builder: "dockerfile" | "herokuish"
   ): Promise<boolean> {
     const resultAppsDestroy = await execSSHCommand(
       `builder:set ${appName} selected ${builder}`
@@ -46,14 +46,15 @@ export class DokkuAppRepository {
     return true;
   }
 
-  async enableSSL(appName: string): Promise<boolean> {
+  async enableSSL(appName: string, options?: SSHExecOptions): Promise<boolean> {
     await this.setEnvVar(appName, {
-      key: 'DOKKU_LETSENCRYPT_EMAIL',
-      value: 'contacto@ocstudios.mx',
+      key: "DOKKU_LETSENCRYPT_EMAIL",
+      value: "contacto@ocstudios.mx",
     });
 
     const resultAppsDestroy = await execSSHCommand(
-      `letsencrypt:enable ${appName}`
+      `letsencrypt:enable ${appName}`,
+      options
     );
 
     if (resultAppsDestroy.code === 1) {
@@ -64,8 +65,8 @@ export class DokkuAppRepository {
   }
 
   async setDockerfilePath(appName: string, path: string): Promise<boolean> {
-    await this.setBuilder(appName, 'dockerfile');
-    await this.unsetEnvVar(appName, 'DOKKU_PROXY_PORT_MAP', false).catch((e) =>
+    await this.setBuilder(appName, "dockerfile");
+    await this.unsetEnvVar(appName, "DOKKU_PROXY_PORT_MAP", false).catch((e) =>
       console.log(e)
     );
 
@@ -86,7 +87,7 @@ export class DokkuAppRepository {
       throw new Error(resultAppsCreate.stderr);
     }
 
-    const apps = resultAppsCreate.stdout.split('\n');
+    const apps = resultAppsCreate.stdout.split("\n");
 
     apps.shift();
     return apps;
@@ -112,7 +113,7 @@ export class DokkuAppRepository {
       throw new InternalServerError(resultAppLogs.stderr);
     }
 
-    return resultAppLogs.stdout.split('\n');
+    return resultAppLogs.stdout.split("\n");
   }
 
   async envVars(appName: string): Promise<EnvVar[]> {
@@ -122,20 +123,20 @@ export class DokkuAppRepository {
       throw new Error(resultListEnv.stderr);
     }
 
-    const envVars = resultListEnv.stdout.split('\n');
+    const envVars = resultListEnv.stdout.split("\n");
     envVars.splice(0, 1);
 
     const buildArgs = await this.buildArgs(appName);
 
     return envVars.map((envVar) => {
-      const split = envVar.split(':');
+      const split = envVar.split(":");
       return {
         key: split[0],
-        value: split.slice(1).join(':').trim(),
+        value: split.slice(1).join(":").trim(),
         asBuildArg: !!buildArgs.find((it) => {
           try {
             return RegExp(
-              `^--build-arg ${split[0]}=${split.slice(1).join(':').trim()}$`
+              `^--build-arg ${split[0]}=${split.slice(1).join(":").trim()}$`
             ).test(it);
           } catch (e) {
             return false;
@@ -175,8 +176,8 @@ export class DokkuAppRepository {
     }
 
     const resultSetEnv = await execSSHCommand(
-      `config:set ${noRestart ? '--no-restart' : ''} ${
-        encoded ? '--encoded' : ''
+      `config:set ${noRestart ? "--no-restart" : ""} ${
+        encoded ? "--encoded" : ""
       } ${appName} ${envVars.map((data) => ` ${data.key}=${data.value}`)}`
     );
 
@@ -223,7 +224,7 @@ export class DokkuAppRepository {
     await this.unsetBuildArg(appName, key);
 
     const resultUnsetEnv = await execSSHCommand(
-      `config:unset ${restart ? '' : '--no-restart'} ${appName} ${key}`
+      `config:unset ${restart ? "" : "--no-restart"} ${appName} ${key}`
     );
 
     if (resultUnsetEnv.code === 1) {

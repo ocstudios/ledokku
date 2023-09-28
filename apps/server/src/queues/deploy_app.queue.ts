@@ -1,17 +1,18 @@
-import { ProxyPort } from './../lib/dokku/models/proxy_ports.model';
-import { DokkuProxyRepository } from './../lib/dokku/dokku.proxy.repository';
-import { App, AppStatus } from '@prisma/client';
-import { $log } from '@tsed/common';
-import { InternalServerError } from '@tsed/exceptions';
-import { Job } from 'bullmq';
-import { PubSub } from 'graphql-subscriptions';
-import { SubscriptionTopics } from '../data/models/subscription_topics';
-import { IQueue, Queue } from '../lib/queues/queue.decorator';
-import { AppCreatedPayload } from '../modules/apps/data/models/app_created.payload';
-import { DokkuAppRepository } from './../lib/dokku/dokku.app.repository';
-import { DokkuGitRepository } from './../lib/dokku/dokku.git.repository';
-import { ActivityRepository } from './../modules/activity/data/repositories/activity.repository';
-import { AppRepository } from './../modules/apps/data/repositories/app.repository';
+import { ProxyPort } from "./../lib/dokku/models/proxy_ports.model";
+import { DokkuProxyRepository } from "./../lib/dokku/dokku.proxy.repository";
+import { App, AppStatus } from "@prisma/client";
+import { $log } from "@tsed/common";
+import { InternalServerError } from "@tsed/exceptions";
+import { Job } from "bullmq";
+import { PubSub } from "graphql-subscriptions";
+import { SubscriptionTopics } from "../data/models/subscription_topics";
+import { IQueue, Queue } from "../lib/queues/queue.decorator";
+import { AppCreatedPayload } from "../modules/apps/data/models/app_created.payload";
+import { DokkuAppRepository } from "./../lib/dokku/dokku.app.repository";
+import { DokkuGitRepository } from "./../lib/dokku/dokku.git.repository";
+import { ActivityRepository } from "./../modules/activity/data/repositories/activity.repository";
+import { AppRepository } from "./../modules/apps/data/repositories/app.repository";
+import { SSHExecOptions } from "node-ssh";
 
 interface QueueArgs {
   appId: string;
@@ -35,6 +36,30 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
 
   protected async execute(job: Job<QueueArgs, any>) {
     const { appId, userName, token } = job.data;
+    const sshOptions: SSHExecOptions = {
+      onStdout: (chunk) => {
+        const payload = {
+          appCreateLogs: {
+            message: chunk.toString(),
+            type: "stdout",
+          },
+          appId,
+        } as AppCreatedPayload;
+        this.appRepository.addCreateLog(appId, payload.appCreateLogs);
+        this.pubsub.publish(SubscriptionTopics.APP_CREATED, payload);
+      },
+      onStderr: (chunk) => {
+        const payload = {
+          appCreateLogs: {
+            message: chunk.toString(),
+            type: "stderr",
+          },
+          appId,
+        } as AppCreatedPayload;
+        this.appRepository.addCreateLog(appId, payload.appCreateLogs);
+        this.pubsub.publish(SubscriptionTopics.APP_CREATED, payload);
+      },
+    };
 
     $log.info(`Iniciando el lanzamiento de la app ${appId}`);
 
@@ -49,7 +74,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
     const appMetaGithub = await this.appRepository.get(appId).AppMetaGithub();
 
     const { branch, repoName, repoOwner } = appMetaGithub;
-    const branchName = branch ? branch : 'main';
+    const branchName = branch ? branch : "main";
 
     await this.dokkuGitRepository.auth(userName, token);
     await this.dokkuGitRepository.unlock(app.name);
@@ -58,50 +83,27 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
       app.name,
       `https://github.com/${repoOwner}/${repoName}.git`,
       branchName,
-      {
-        onStdout: (chunk) => {
-          const payload = {
-            appCreateLogs: {
-              message: chunk.toString(),
-              type: 'stdout',
-            },
-            appId,
-          } as AppCreatedPayload;
-          this.appRepository.addCreateLog(appId, payload.appCreateLogs);
-          this.pubsub.publish(SubscriptionTopics.APP_CREATED, payload);
-        },
-        onStderr: (chunk) => {
-          const payload = {
-            appCreateLogs: {
-              message: chunk.toString(),
-              type: 'stderr',
-            },
-            appId,
-          } as AppCreatedPayload;
-          this.appRepository.addCreateLog(appId, payload.appCreateLogs);
-          this.pubsub.publish(SubscriptionTopics.APP_CREATED, payload);
-        },
-      }
+      sshOptions
     );
 
     const currentPorts = await this.dokkuProxyRepository
-      .ports(app.name)
+      .ports(app.name, sshOptions)
       .catch((err) => [] as ProxyPort[]);
 
     if (currentPorts.length > 0) {
-      const webPort = currentPorts.find((it) => it.host === '80');
+      const webPort = currentPorts.find((it) => it.host === "80");
 
       if (!webPort) {
         await this.dokkuProxyRepository.add(
           app.name,
-          'http',
-          '80',
+          "http",
+          "80",
           currentPorts[0].container
         );
       }
 
       await this.dokkuAppRepository
-        .enableSSL(app.name)
+        .enableSSL(app.name, sshOptions)
         .catch((e) => $log.warn(e));
     }
 
@@ -116,7 +118,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
     const payload = <AppCreatedPayload>{
       appCreateLogs: {
         message: result.id,
-        type: 'end:success',
+        type: "end:success",
       },
       appId: job.data.appId,
     };
@@ -136,7 +138,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
       name: `Proyecto "${result.name}" lanzado`,
       description: `Desde https://github.com/${repoOwner}/${repoName}/tree/${branch}`,
       referenceId: job.data.appId,
-      refersToModel: 'App',
+      refersToModel: "App",
       Modifier: {
         connect: {
           username: job.data.userName,
@@ -150,8 +152,8 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
 
     const payload = <AppCreatedPayload>{
       appCreateLogs: {
-        message: 'Failed to create an app',
-        type: 'end:failure',
+        message: "Failed to create an app",
+        type: "end:failure",
       },
     };
     this.pubsub?.publish(SubscriptionTopics.APP_CREATED, payload);
@@ -175,7 +177,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
         name: `Lanzamiento de "${app.name}" fallido`,
         description: error.message,
         referenceId: job.data.appId,
-        refersToModel: 'App',
+        refersToModel: "App",
         Modifier: {
           connect: {
             username: job.data.userName,

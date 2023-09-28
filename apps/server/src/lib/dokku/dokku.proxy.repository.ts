@@ -1,7 +1,8 @@
-import { Injectable } from '@tsed/di';
-import { InternalServerError } from '@tsed/exceptions';
-import { execSSHCommand } from '../ssh';
-import { ProxyPort } from './models/proxy_ports.model';
+import { Injectable } from "@tsed/di";
+import { InternalServerError } from "@tsed/exceptions";
+import { execSSHCommand } from "../ssh";
+import { ProxyPort } from "./models/proxy_ports.model";
+import { SSHExecOptions } from "node-ssh";
 
 @Injectable()
 export class DokkuProxyRepository {
@@ -39,18 +40,21 @@ export class DokkuProxyRepository {
     return true;
   }
 
-  async ports(appName: string): Promise<ProxyPort[]> {
-    const resultProxyPorts = await execSSHCommand(`proxy:ports ${appName}`);
+  async ports(appName: string, options?: SSHExecOptions): Promise<ProxyPort[]> {
+    const resultProxyPorts = await execSSHCommand(
+      `proxy:ports ${appName}`,
+      options
+    );
 
     if (resultProxyPorts.code === 1) {
       throw new InternalServerError(resultProxyPorts.stderr);
     }
 
     const proxyPorts = resultProxyPorts.stdout
-      .split('\n')
-      .filter((line) => !line.includes('->'))
+      .split("\n")
+      .filter((line) => !line.includes("->"))
       .map<ProxyPort>((line) => {
-        const data = line.split(' ').filter((line) => line !== '');
+        const data = line.split(" ").filter((line) => line !== "");
         return { scheme: data[0], host: data[1], container: data[2] };
       });
 
