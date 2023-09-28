@@ -1,13 +1,13 @@
-import { $log } from '@tsed/common';
-import { Job } from 'bullmq';
-import { PubSub } from 'graphql-subscriptions';
-import { SubscriptionTopics } from '../data/models/subscription_topics';
-import { IQueue, Queue } from '../lib/queues/queue.decorator';
-import { DatabaseLinkPayload } from '../modules/databases/data/models/database_link.payload';
-import { DokkuDatabaseRepository } from './../lib/dokku/dokku.database.repository';
-import { ActivityRepository } from './../modules/activity/data/repositories/activity.repository';
-import { AppRepository } from './../modules/apps/data/repositories/app.repository';
-import { DatabaseRepository } from './../modules/databases/data/repositories/database.repository';
+import { $log } from "@tsed/common";
+import { Job } from "bullmq";
+import { PubSub } from "graphql-subscriptions";
+import { SubscriptionTopics } from "../data/models/subscription_topics";
+import { IQueue, Queue } from "../lib/queues/queue.decorator";
+import { DatabaseLinkPayload } from "../modules/databases/data/models/database_link.payload";
+import { DokkuDatabaseRepository } from "./../lib/dokku/dokku.database.repository";
+import { ActivityRepository } from "./../modules/activity/data/repositories/activity.repository";
+import { AppRepository } from "./../modules/apps/data/repositories/app.repository";
+import { DatabaseRepository } from "./../modules/databases/data/repositories/database.repository";
 
 interface QueueArgs {
   appId: string;
@@ -48,7 +48,7 @@ export class LinkDatabaseQueue extends IQueue<QueueArgs> {
           >{
             linkDatabaseLogs: {
               message: chunk.toString(),
-              type: 'stdout',
+              type: "stdout",
             },
           });
         },
@@ -58,7 +58,7 @@ export class LinkDatabaseQueue extends IQueue<QueueArgs> {
           >{
             linkDatabaseLogs: {
               message: chunk.toString(),
-              type: 'stderr',
+              type: "stderr",
             },
           });
         },
@@ -75,7 +75,7 @@ export class LinkDatabaseQueue extends IQueue<QueueArgs> {
       name: `Base de datos "${database.name}" enlazada con "${app.name}"`,
       description: database.id,
       referenceId: database.id,
-      refersToModel: 'Database',
+      refersToModel: "Database",
       Modifier: {
         connect: {
           id: userId,
@@ -86,24 +86,27 @@ export class LinkDatabaseQueue extends IQueue<QueueArgs> {
     $log.info(
       `Terminando de enlazar ${database.type} ${database.name} con ${app.name}`
     );
-    if (!res.stderr) {
-      this.pubsub.publish(SubscriptionTopics.DATABASE_LINKED, <
-        DatabaseLinkPayload
-      >{
-        linkDatabaseLogs: {
-          message: '',
-          type: 'end:success',
-        },
-      });
-    } else if (res.stderr) {
-      this.pubsub.publish(SubscriptionTopics.DATABASE_LINKED, <
-        DatabaseLinkPayload
-      >{
-        linkDatabaseLogs: {
-          message: '',
-          type: 'end:failure',
-        },
-      });
-    }
+  }
+
+  onSuccess(job: Job<QueueArgs, any, string>, result: any) {
+    this.pubsub.publish(SubscriptionTopics.DATABASE_LINKED, <
+      DatabaseLinkPayload
+    >{
+      linkDatabaseLogs: {
+        message: "Link database successfully! :D",
+        type: "end:success",
+      },
+    });
+  }
+
+  onFailed(job: Job<QueueArgs, any, string>, error: Error) {
+    this.pubsub.publish(SubscriptionTopics.DATABASE_LINKED, <
+      DatabaseLinkPayload
+    >{
+      linkDatabaseLogs: {
+        message: "Failed to link database :(",
+        type: "end:failure",
+      },
+    });
   }
 }

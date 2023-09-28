@@ -117,7 +117,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
   async onSuccess(job: Job<QueueArgs, any, string>, result: App) {
     const payload = <AppCreatedPayload>{
       appCreateLogs: {
-        message: result.id,
+        message: "App created successfully! :D",
         type: "end:success",
       },
       appId: job.data.appId,
@@ -152,7 +152,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
 
     const payload = <AppCreatedPayload>{
       appCreateLogs: {
-        message: "Failed to create an app",
+        message: "Failed to create app :(",
         type: "end:failure",
       },
     };
