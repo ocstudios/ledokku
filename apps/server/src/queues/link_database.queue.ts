@@ -93,7 +93,7 @@ export class LinkDatabaseQueue extends IQueue<QueueArgs> {
       DatabaseLinkPayload
     >{
       linkDatabaseLogs: {
-        message: "Link database successfully! :D",
+        message: "Link database successfully! 🎉",
         type: "end:success",
       },
     });
@@ -104,7 +104,7 @@ export class LinkDatabaseQueue extends IQueue<QueueArgs> {
       DatabaseLinkPayload
     >{
       linkDatabaseLogs: {
-        message: "Failed to link database :(",
+        message: "Failed to link database! 😭",
         type: "end:failure",
       },
     });

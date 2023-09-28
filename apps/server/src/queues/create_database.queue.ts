@@ -98,7 +98,7 @@ export class CreateDatabaseQueue extends IQueue<QueueArgs> {
       DatabaseCreatedPayload
     >{
       createDatabaseLogs: {
-        message: `Base de datos creada con exito`,
+        message: "Database created successfully! 🎉",
         type: "end:success",
       },
     });
@@ -112,7 +112,7 @@ export class CreateDatabaseQueue extends IQueue<QueueArgs> {
       DatabaseCreatedPayload
     >{
       createDatabaseLogs: {
-        message: `Creacion de la base de datos fallida, ${error}`,
+        message: `Failed to create database! 😭`,
         type: "end:failure",
       },
     });

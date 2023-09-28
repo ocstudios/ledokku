@@ -1,12 +1,12 @@
-import { $log } from '@tsed/common';
-import { Job } from 'bullmq';
-import { PubSub } from 'graphql-subscriptions';
-import { SubscriptionTopics } from '../data/models/subscription_topics';
-import { DokkuAppRepository } from '../lib/dokku/dokku.app.repository';
-import { IQueue, Queue } from '../lib/queues/queue.decorator';
-import { AppRestartPayload } from '../modules/apps/data/models/app_restart.payload';
-import { AppRepository } from '../repositories';
-import { ActivityRepository } from './../modules/activity/data/repositories/activity.repository';
+import { $log } from "@tsed/common";
+import { Job } from "bullmq";
+import { PubSub } from "graphql-subscriptions";
+import { SubscriptionTopics } from "../data/models/subscription_topics";
+import { DokkuAppRepository } from "../lib/dokku/dokku.app.repository";
+import { IQueue, Queue } from "../lib/queues/queue.decorator";
+import { AppRestartPayload } from "../modules/apps/data/models/app_restart.payload";
+import { AppRepository } from "../repositories";
+import { ActivityRepository } from "./../modules/activity/data/repositories/activity.repository";
 
 interface QueueArgs {
   appName: string;
@@ -40,7 +40,7 @@ export class RestartAppQueue extends IQueue<QueueArgs> {
           >{
             appRestartLogs: {
               message: chunk.toString(),
-              type: 'stdout',
+              type: "stdout",
             },
           });
         },
@@ -50,7 +50,7 @@ export class RestartAppQueue extends IQueue<QueueArgs> {
           >{
             appRestartLogs: {
               message: chunk.toString(),
-              type: 'stderr',
+              type: "stderr",
             },
           });
         },
@@ -62,36 +62,29 @@ export class RestartAppQueue extends IQueue<QueueArgs> {
     await this.activityRepository.add({
       name: `Reinicio de "${appName}"`,
       referenceId: appId,
-      refersToModel: 'App',
+      refersToModel: "App",
       Modifier: {
         connect: {
           id: userId,
         },
       },
     });
+  }
 
-    if (!res.stderr) {
-      this.pubsub.publish(SubscriptionTopics.APP_RESTARTED, <AppRestartPayload>{
-        appRestartLogs: {
-          message: '',
-          type: 'end:success',
-        },
-      });
-    } else if (res.stderr) {
-      this.pubsub.publish(SubscriptionTopics.APP_RESTARTED, <AppRestartPayload>{
-        appRestartLogs: {
-          message: 'Failed to restart app',
-          type: 'end:failure',
-        },
-      });
-    }
+  onSuccess(job: Job<QueueArgs, any, string>, result: any) {
+    this.pubsub.publish(SubscriptionTopics.APP_RESTARTED, <AppRestartPayload>{
+      appRestartLogs: {
+        message: "App restarted successfully! 🎉",
+        type: "end:success",
+      },
+    });
   }
 
   onFailed(job: Job<QueueArgs, any, string>, error: Error) {
     this.pubsub.publish(SubscriptionTopics.APP_RESTARTED, <AppRestartPayload>{
       appRestartLogs: {
-        message: 'Failed restart app',
-        type: 'end:failure',
+        message: "App restart failed! 😭",
+        type: "end:failure",
       },
     });
   }

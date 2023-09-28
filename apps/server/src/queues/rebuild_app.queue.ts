@@ -1,12 +1,12 @@
-import { ActivityRepository } from './../modules/activity/data/repositories/activity.repository';
-import { $log } from '@tsed/common';
-import { Job } from 'bullmq';
-import { PubSub } from 'graphql-subscriptions';
-import { IQueue, Queue } from '../lib/queues/queue.decorator';
-import { AppRebuildPayload } from '../modules/apps/data/models/app_rebuild.payload';
-import { SubscriptionTopics } from './../data/models/subscription_topics';
-import { DokkuAppRepository } from './../lib/dokku/dokku.app.repository';
-import { AppRepository } from '../repositories';
+import { ActivityRepository } from "./../modules/activity/data/repositories/activity.repository";
+import { $log } from "@tsed/common";
+import { Job } from "bullmq";
+import { PubSub } from "graphql-subscriptions";
+import { IQueue, Queue } from "../lib/queues/queue.decorator";
+import { AppRebuildPayload } from "../modules/apps/data/models/app_rebuild.payload";
+import { SubscriptionTopics } from "./../data/models/subscription_topics";
+import { DokkuAppRepository } from "./../lib/dokku/dokku.app.repository";
+import { AppRepository } from "../repositories";
 
 interface QueueArgs {
   appName: string;
@@ -35,7 +35,7 @@ export class RebuildAppQueue extends IQueue<QueueArgs> {
         this.pubsub.publish(SubscriptionTopics.APP_REBUILT, <AppRebuildPayload>{
           appRebuildLogs: {
             message: chunk.toString(),
-            type: 'stdout',
+            type: "stdout",
           },
         });
       },
@@ -43,7 +43,7 @@ export class RebuildAppQueue extends IQueue<QueueArgs> {
         this.pubsub.publish(SubscriptionTopics.APP_REBUILT, <AppRebuildPayload>{
           appRebuildLogs: {
             message: chunk.toString(),
-            type: 'stderr',
+            type: "stderr",
           },
         });
       },
@@ -54,36 +54,29 @@ export class RebuildAppQueue extends IQueue<QueueArgs> {
     await this.activityRepository.add({
       name: `Rebuild de "${appName}"`,
       referenceId: appId,
-      refersToModel: 'App',
+      refersToModel: "App",
       Modifier: {
         connect: {
           id: userId,
         },
       },
     });
+  }
 
-    if (!res.stderr) {
-      this.pubsub.publish(SubscriptionTopics.APP_REBUILT, <AppRebuildPayload>{
-        appRebuildLogs: {
-          message: '',
-          type: 'end:success',
-        },
-      });
-    } else if (res.stderr) {
-      this.pubsub.publish(SubscriptionTopics.APP_REBUILT, <AppRebuildPayload>{
-        appRebuildLogs: {
-          message: 'Failed to rebuild app',
-          type: 'end:failure',
-        },
-      });
-    }
+  onSuccess(job: Job<QueueArgs, any, string>, result: any) {
+    this.pubsub.publish(SubscriptionTopics.APP_REBUILT, <AppRebuildPayload>{
+      appRebuildLogs: {
+        message: "App rebuilt successfully! 🎉",
+        type: "end:success",
+      },
+    });
   }
 
   onFailed(job: Job<QueueArgs, any, string>, error: Error) {
     this.pubsub.publish(SubscriptionTopics.APP_REBUILT, <AppRebuildPayload>{
       appRebuildLogs: {
-        message: 'Failed to rebuild app',
-        type: 'end:failure',
+        message: "App rebuild failed! 😭",
+        type: "end:failure",
       },
     });
   }
