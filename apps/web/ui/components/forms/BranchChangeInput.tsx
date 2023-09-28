@@ -1,6 +1,5 @@
 import {
   Button,
-  Input,
   Modal,
   ModalBody,
   ModalContent,
@@ -8,14 +7,12 @@ import {
   ModalHeader,
   Select,
   SelectItem,
-  Spinner,
 } from "@nextui-org/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   App,
   AppByIdDocument,
   useBranchesLazyQuery,
-  useBranchesQuery,
   useChangeAppBranchMutation,
   useGithubInstallationIdQuery,
 } from "@/generated/graphql";
@@ -29,7 +26,8 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
   const ghInfo = app.appMetaGithub;
 
   const [changeBranch, { loading }] = useChangeAppBranchMutation();
-  const [name, setName] = useState(undefined as string | undefined);
+  const [name, setName] = useState(ghInfo?.branch);
+  const selected = new Set<string>(name ? [name] : []);
 
   const [fetchBranches, { data: branches, loading: loadingBranches }] =
     useBranchesLazyQuery();
@@ -44,18 +42,12 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
     },
   });
 
-  useEffect(() => {
-    if (branches) {
-      setName(ghInfo?.branch);
-    }
-  }, [branches, ghInfo]);
-
   if (!ghInfo) return <></>;
 
   return (
     <div>
       <Modal
-        isOpen={ghInfo.branch !== name && !loading}
+        isOpen={!!ghInfo.branch && !!branches && ghInfo.branch !== name}
         onClose={() => setName(ghInfo.branch)}
       >
         <ModalContent>
@@ -107,7 +99,7 @@ export const BranchChangeInput = ({ app }: BranchChangeInputProp) => {
       <Select
         label="Rama a lanzar"
         placeholder="Ej. master, dev, feat"
-        value={name}
+        selectedKeys={selected}
         isLoading={loadingBranches || loadingId}
         onSelectionChange={(keys) => {
           if (keys instanceof Set) {
