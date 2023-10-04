@@ -1,40 +1,48 @@
-import { ProxyPort } from "./../lib/dokku/models/proxy_ports.model";
-import { DokkuProxyRepository } from "./../lib/dokku/dokku.proxy.repository";
-import { App, AppStatus } from "@prisma/client";
-import { $log } from "@tsed/common";
-import { InternalServerError } from "@tsed/exceptions";
-import { Job } from "bullmq";
-import { PubSub } from "graphql-subscriptions";
-import { SubscriptionTopics } from "../data/models/subscription_topics";
-import { IQueue, Queue } from "../lib/queues/queue.decorator";
-import { AppCreatedPayload } from "../modules/apps/data/models/app_created.payload";
-import { DokkuAppRepository } from "./../lib/dokku/dokku.app.repository";
-import { DokkuGitRepository } from "./../lib/dokku/dokku.git.repository";
-import { ActivityRepository } from "./../modules/activity/data/repositories/activity.repository";
-import { AppRepository } from "./../modules/apps/data/repositories/app.repository";
+import { DokkuProxyRepository as DokkuProxyRepository1 } from "./../lib/dokku/dokku.proxy.repository";
+import { App, App as App1, AppStatus, AppStatus as AppStatus1 } from "@prisma/client";
+import { $log, $log as $log1 } from "@tsed/common";
+import { Job, Job as Job1 } from "bullmq";
+import { PubSub as PubSub1 } from "graphql-subscriptions";
+import { SubscriptionTopics, SubscriptionTopics as SubscriptionTopics1 } from "../data/models/subscription_topics";
+import {
+  IQueue as IQueue1,
+  Queue as Queue1,
+} from "../lib/queues/queue.decorator";
+import { AppCreatedPayload, AppCreatedPayload as AppCreatedPayload1 } from "../modules/apps/data/models/app_created.payload";
+import { DokkuAppRepository as DokkuAppRepository1 } from "./../lib/dokku/dokku.app.repository";
+import { DokkuGitRepository as DokkuGitRepository1 } from "./../lib/dokku/dokku.git.repository";
+import { ActivityRepository as ActivityRepository1 } from "./../modules/activity/data/repositories/activity.repository";
+import { AppRepository as AppRepository1 } from "./../modules/apps/data/repositories/app.repository";
 import { SSHExecOptions } from "node-ssh";
+import { NotFound } from "@tsed/exceptions";
+import { ProxyPort } from "./../lib/dokku/models/proxy_ports.model";
+import { DatabaseRepository } from "./../modules/databases/data/repositories/database.repository";
+import { LinkDatabaseQueue } from "./link_database.queue";
 
 interface QueueArgs {
   appId: string;
   userName: string;
   token: string;
   deleteOnFailed?: boolean;
+  databaseId?: string;
 }
 
-@Queue()
-export class DeployAppQueue extends IQueue<QueueArgs, App> {
+@Queue1()
+export class DeployAppQueue extends IQueue1<QueueArgs, App1> {
   constructor(
-    private appRepository: AppRepository,
-    private dokkuGitRepository: DokkuGitRepository,
-    private pubsub: PubSub,
-    private activityRepository: ActivityRepository,
-    private dokkuAppRepository: DokkuAppRepository,
-    private dokkuProxyRepository: DokkuProxyRepository
+    private appRepository: AppRepository1,
+    private databaseRepository: DatabaseRepository,
+    private dokkuGitRepository: DokkuGitRepository1,
+    private pubsub: PubSub1,
+    private activityRepository: ActivityRepository1,
+    private linkDatabaseQueue: LinkDatabaseQueue,
+    private dokkuAppRepository: DokkuAppRepository1,
+    private dokkuProxyRepository: DokkuProxyRepository1
   ) {
     super();
   }
 
-  protected async execute(job: Job<QueueArgs, any>) {
+  protected async execute(job: Job1<QueueArgs, any>) {
     const { appId, userName, token } = job.data;
     const sshOptions: SSHExecOptions = {
       onStdout: (chunk) => {
@@ -44,9 +52,9 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
             type: "stdout",
           },
           appId,
-        } as AppCreatedPayload;
+        } as AppCreatedPayload1;
         this.appRepository.addCreateLog(appId, payload.appCreateLogs);
-        this.pubsub.publish(SubscriptionTopics.APP_CREATED, payload);
+        this.pubsub.publish(SubscriptionTopics1.APP_CREATED, payload);
       },
       onStderr: (chunk) => {
         const payload = {
@@ -55,18 +63,18 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
             type: "stderr",
           },
           appId,
-        } as AppCreatedPayload;
+        } as AppCreatedPayload1;
         this.appRepository.addCreateLog(appId, payload.appCreateLogs);
-        this.pubsub.publish(SubscriptionTopics.APP_CREATED, payload);
+        this.pubsub.publish(SubscriptionTopics1.APP_CREATED, payload);
       },
     };
 
-    $log.info(`Iniciando el lanzamiento de la app ${appId}`);
+    $log1.info(`Iniciando el lanzamiento de la app ${appId}`);
 
     const app = await this.appRepository.get(appId);
 
     await this.appRepository.update(appId, {
-      status: AppStatus.BUILDING,
+      status: AppStatus1.BUILDING,
     });
 
     this.appRepository.clearCreateLogs(appId);
@@ -104,7 +112,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
 
       await this.dokkuAppRepository
         .enableSSL(app.name, sshOptions)
-        .catch((e) => $log.warn(e));
+        .catch((e) => $log1.warn(e));
     }
 
     $log.info(
@@ -134,6 +142,32 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
       status: AppStatus.RUNNING,
     });
 
+    if (job.data.databaseId) {
+      const database = await this.databaseRepository.databaseWithApps(
+        job.data.databaseId,
+        job.data.appId
+      );
+
+      if (!database) {
+        throw new NotFound(
+          `La base de datos no existe con ID ${job.data.databaseId}`
+        );
+      }
+
+      const isLinked = database.apps.length === 1;
+
+      if (isLinked) {
+        throw new Error(
+          `${database.name} database is already linked to ${result.name} app`
+        );
+      }
+
+      await this.linkDatabaseQueue.add({
+        appId: job.data.appId,
+        databaseId: job.data.databaseId,
+      });
+    }
+
     await this.activityRepository.add({
       name: `Proyecto "${result.name}" lanzado`,
       description: `Desde https://github.com/${repoOwner}/${repoName}/tree/${branch}`,
@@ -160,6 +194,32 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
     this.appRepository.addCreateLog(appId, payload.appCreateLogs);
 
     const app = await this.appRepository.get(appId);
+
+    if (job.data.databaseId) {
+      const database = await this.databaseRepository.databaseWithApps(
+        job.data.databaseId,
+        job.data.appId
+      );
+
+      if (!database) {
+        throw new NotFound(
+          `La base de datos no existe con ID ${job.data.databaseId}`
+        );
+      }
+
+      const isLinked = database.apps.length === 1;
+
+      if (isLinked) {
+        throw new Error(
+          `${database.name} database is already linked to ${app.name} app`
+        );
+      }
+
+      await this.linkDatabaseQueue.add({
+        appId: job.data.appId,
+        databaseId: job.data.databaseId,
+      });
+    }
 
     if (deleteOnFailed) {
       $log.info(app);
