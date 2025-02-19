@@ -1,12 +1,12 @@
-import { AppStatus } from '@prisma/client';
+import { AppStatus } from "@prisma/client";
 import {
   BadRequest,
   Conflict,
   InternalServerError,
   NotFound,
-} from '@tsed/exceptions';
-import { ResolverService } from '@tsed/typegraphql';
-import fetch from 'node-fetch';
+} from "@tsed/exceptions";
+import { ResolverService } from "@tsed/typegraphql";
+import fetch from "node-fetch";
 import {
   Arg,
   Args,
@@ -22,16 +22,16 @@ import {
   ResolverFilterData,
   Root,
   Subscription,
-} from 'type-graphql';
-import { PaginationArgs } from '../../data/args/pagination';
-import { DokkuContext } from '../../data/models/dokku_context';
-import { LogPayload } from '../../data/models/log_payload';
-import { SubscriptionTopics } from '../../data/models/subscription_topics';
-import { ProxyPort } from '../../lib/dokku/models/proxy_ports.model';
-import { LinkDatabaseQueue } from '../../queues/link_database.queue';
-import { RebuildAppQueue } from '../../queues/rebuild_app.queue';
-import { RestartAppQueue } from '../../queues/restart_app.queue';
-import { UnlinkDatabaseQueue } from '../../queues/unlink_database.queue';
+} from "type-graphql";
+import { PaginationArgs } from "../../data/args/pagination";
+import { DokkuContext } from "../../data/models/dokku_context";
+import { LogPayload } from "../../data/models/log_payload";
+import { SubscriptionTopics } from "../../data/models/subscription_topics";
+import { ProxyPort } from "../../lib/dokku/models/proxy_ports.model";
+import { LinkDatabaseQueue } from "../../queues/link_database.queue";
+import { RebuildAppQueue } from "../../queues/rebuild_app.queue";
+import { RestartAppQueue } from "../../queues/restart_app.queue";
+import { UnlinkDatabaseQueue } from "../../queues/unlink_database.queue";
 import {
   AppRepository,
   DatabaseRepository,
@@ -40,36 +40,37 @@ import {
   DokkuProxyRepository,
   GithubRepository,
   UserRepository,
-} from '../../repositories';
-import { Database } from '../databases/data/models/database.model';
-import { AppGithubMeta } from '../github/data/models/app_meta_github.model';
-import { Tag } from '../tags/data/models/tag.model';
-import { SetEnvVarQueue } from './../../queues/set_env_var.queue';
-import { UnsetEnvVarQueue } from './../../queues/unset_env_var.queue';
-import { AddAppProxyPortInput } from './data/inputs/add_app_proxy_port.input';
-import { AddDomainInput } from './data/inputs/add_domain.input';
-import { CreateAppDokkuInput } from './data/inputs/create_app_dokku.input';
-import { CreateAppGithubInput } from './data/inputs/create_app_github.input';
-import { DestroyAppInput } from './data/inputs/destroy_app.input';
-import { LinkDatabaseInput } from './data/inputs/link_database.input';
-import { RebuildAppInput } from './data/inputs/rebuild_app.input';
-import { RemoveAppProxyPortInput } from './data/inputs/remove_app_proxy_port.input';
-import { RemoveDomainInput } from './data/inputs/remove_domain.input';
-import { RestartAppInput } from './data/inputs/restart_app.input';
-import { SetDomainInput } from './data/inputs/set_domain.input';
-import { SetEnvVarInput } from './data/inputs/set_env_var.input';
-import { UnlinkDatabaseInput } from './data/inputs/unlink_database.input';
-import { UnsetEnvVarInput } from './data/inputs/unset_env_var.input';
-import { UpdateBranchInput } from './data/inputs/update_branch.input';
-import { App, AppPaginationInfo } from './data/models/app.model';
-import { AppCreatedPayload } from './data/models/app_created.payload';
-import { AppRebuildPayload } from './data/models/app_rebuild.payload';
-import { AppRestartPayload } from './data/models/app_restart.payload';
-import { CreateAppResult } from './data/models/create_app.model';
-import { AppDomain } from './data/models/domain_list.model';
-import { EnvVarList } from './data/models/env_var_list.model';
-import { Logs } from './data/models/logs.model';
-import { BooleanResult } from './data/models/result.model';
+} from "../../repositories";
+import { Database } from "../databases/data/models/database.model";
+import { AppGithubMeta } from "../github/data/models/app_meta_github.model";
+import { Tag } from "../tags/data/models/tag.model";
+import { SetEnvVarQueue } from "./../../queues/set_env_var.queue";
+import { UnsetEnvVarQueue } from "./../../queues/unset_env_var.queue";
+import { AddAppProxyPortInput } from "./data/inputs/add_app_proxy_port.input";
+import { AddDomainInput } from "./data/inputs/add_domain.input";
+import { CreateAppDokkuInput } from "./data/inputs/create_app_dokku.input";
+import { CreateAppGithubInput } from "./data/inputs/create_app_github.input";
+import { DestroyAppInput } from "./data/inputs/destroy_app.input";
+import { LinkDatabaseInput } from "./data/inputs/link_database.input";
+import { RebuildAppInput } from "./data/inputs/rebuild_app.input";
+import { RemoveAppProxyPortInput } from "./data/inputs/remove_app_proxy_port.input";
+import { RemoveDomainInput } from "./data/inputs/remove_domain.input";
+import { RestartAppInput } from "./data/inputs/restart_app.input";
+import { SetDomainInput } from "./data/inputs/set_domain.input";
+import { SetEnvVarInput } from "./data/inputs/set_env_var.input";
+import { UnlinkDatabaseInput } from "./data/inputs/unlink_database.input";
+import { UnsetEnvVarInput } from "./data/inputs/unset_env_var.input";
+import { UpdateBranchInput } from "./data/inputs/update_branch.input";
+import { App, AppPaginationInfo } from "./data/models/app.model";
+import { AppCreatedPayload } from "./data/models/app_created.payload";
+import { AppRebuildPayload } from "./data/models/app_rebuild.payload";
+import { AppRestartPayload } from "./data/models/app_restart.payload";
+import { CreateAppResult } from "./data/models/create_app.model";
+import { AppDomain } from "./data/models/domain_list.model";
+import { EnvVarList } from "./data/models/env_var_list.model";
+import { Logs } from "./data/models/logs.model";
+import { BooleanResult } from "./data/models/result.model";
+import { CreateAppDockerInput } from "./data/inputs/create_app_docker.input";
 
 @ResolverService(App)
 export class AppResolver {
@@ -91,7 +92,7 @@ export class AppResolver {
 
   @Authorized()
   @Query((returns) => App)
-  async app(@Arg('appId') appId: string): Promise<App> {
+  async app(@Arg("appId") appId: string): Promise<App> {
     return this.appRepository.get(appId);
   }
 
@@ -99,7 +100,7 @@ export class AppResolver {
   @Query((returns) => AppPaginationInfo)
   async apps(
     @Args((type) => PaginationArgs) pagination: PaginationArgs,
-    @Arg('tags', (type) => [String], { nullable: true }) tags?: string[]
+    @Arg("tags", (type) => [String], { nullable: true }) tags?: string[]
   ): Promise<AppPaginationInfo> {
     return this.appRepository.getAllPaginated(pagination, {
       tags: tags
@@ -125,7 +126,7 @@ export class AppResolver {
   @Authorized()
   @Query((returns) => Logs)
   async appLogs(
-    @Arg('appId') appId: string,
+    @Arg("appId") appId: string,
     @Ctx() context: DokkuContext
   ): Promise<Logs> {
     const app = await this.appRepository.get(appId);
@@ -142,7 +143,7 @@ export class AppResolver {
   @Authorized()
   @Query((returns) => [ProxyPort])
   async appProxyPorts(
-    @Arg('appId') appId: string,
+    @Arg("appId") appId: string,
     @Ctx() context: DokkuContext
   ): Promise<ProxyPort[]> {
     const app = await this.appRepository.get(appId);
@@ -161,7 +162,7 @@ export class AppResolver {
   @Authorized()
   @Query((returns) => [AppDomain])
   async domains(
-    @Arg('appId') appId: string,
+    @Arg("appId") appId: string,
     @Ctx() context: DokkuContext
   ): Promise<AppDomain[]> {
     const app = await this.appRepository.get(appId);
@@ -182,7 +183,7 @@ export class AppResolver {
   @Authorized()
   @Query((returns) => Int)
   async checkDomainStatus(
-    @Arg('url', (type) => String) url: string
+    @Arg("url", (type) => String) url: string
   ): Promise<number> {
     return fetch(url).then((it) => it.status);
   }
@@ -190,7 +191,7 @@ export class AppResolver {
   @Authorized()
   @Query((returns) => EnvVarList)
   async envVars(
-    @Arg('appId') appId: string,
+    @Arg("appId") appId: string,
     @Ctx() context: DokkuContext
   ): Promise<EnvVarList> {
     const app = await this.appRepository.get(appId);
@@ -207,7 +208,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async setEnvVar(
-    @Arg('input', (type) => SetEnvVarInput) input: SetEnvVarInput,
+    @Arg("input", (type) => SetEnvVarInput) input: SetEnvVarInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
     const app = await this.appRepository.get(input.appId);
@@ -228,7 +229,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async unsetEnvVar(
-    @Arg('input', (type) => UnsetEnvVarInput) input: UnsetEnvVarInput,
+    @Arg("input", (type) => UnsetEnvVarInput) input: UnsetEnvVarInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
     const app = await this.appRepository.get(input.appId);
@@ -249,7 +250,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => Boolean)
   async addAppProxyPort(
-    @Arg('input', (type) => AddAppProxyPortInput) input: AddAppProxyPortInput,
+    @Arg("input", (type) => AddAppProxyPortInput) input: AddAppProxyPortInput,
     @Ctx() context: DokkuContext
   ): Promise<Boolean> {
     const app = await this.appRepository.get(input.appId);
@@ -260,7 +261,7 @@ export class AppResolver {
 
     await this.dokkuProxyRepository.add(
       app.name,
-      'http',
+      "http",
       input.host,
       input.container
     );
@@ -271,7 +272,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async addDomain(
-    @Arg('input', (type) => AddDomainInput) input: AddDomainInput,
+    @Arg("input", (type) => AddDomainInput) input: AddDomainInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
     const app = await this.appRepository.get(input.appId);
@@ -288,16 +289,16 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => CreateAppResult)
   async createAppDokku(
-    @Arg('input', (type) => CreateAppDokkuInput) input: CreateAppDokkuInput,
+    @Arg("input", (type) => CreateAppDokkuInput) input: CreateAppDokkuInput,
     @Ctx() context: DokkuContext
   ): Promise<CreateAppResult> {
     if (!/^[a-z0-9-]+$/.test(input.name))
-      throw new BadRequest('Mal formato del nombre');
+      throw new BadRequest("Mal formato del nombre");
 
     const appNameExists = await this.appRepository.exists(input.name);
 
     if (appNameExists) {
-      throw new Conflict('Nombre ya utilizado');
+      throw new Conflict("Nombre ya utilizado");
     }
 
     await this.dokkuAppRepository.create(input.name);
@@ -319,12 +320,12 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => App)
   async createAppGithub(
-    @Arg('input', (type) => CreateAppGithubInput) input: CreateAppGithubInput,
+    @Arg("input", (type) => CreateAppGithubInput) input: CreateAppGithubInput,
     @Ctx() context: DokkuContext,
     @PubSub() pubSub: PubSubEngine
   ): Promise<App> {
     if (!/^[a-z0-9-]+$/.test(input.name))
-      throw new BadRequest('Mal formato del nombre');
+      throw new BadRequest("Mal formato del nombre");
 
     const user = await this.userRepository.get(context.auth.user.id);
     const appName = await this.appRepository.generateAppName(input.name);
@@ -383,13 +384,53 @@ export class AppResolver {
       );
     }
 
-    throw new InternalServerError('No se creó la app');
+    throw new InternalServerError("No se creó la app");
+  }
+
+  @Authorized()
+  @Mutation((returns) => App)
+  async createAppDocker(
+    @Arg("input", (type) => CreateAppDockerInput) input: CreateAppDockerInput,
+    @Ctx() context: DokkuContext,
+    @PubSub() pubSub: PubSubEngine
+  ): Promise<App> {
+    if (!/^[a-z0-9-]+$/.test(input.name))
+      throw new BadRequest("Mal formato del nombre");
+
+    const user = await this.userRepository.get(context.auth.user.id);
+    const appName = await this.appRepository.generateAppName(input.name);
+    const created = await this.dokkuAppRepository.create(appName);
+
+    if (created) {
+      if (input.envVars && input.envVars.length > 0) {
+        for (const env of input.envVars) {
+          await this.dokkuAppRepository.setEnvVar(
+            appName,
+            env,
+            undefined,
+            undefined,
+            env.asBuildArg
+          );
+        }
+      }
+
+      return this.githubRepository.createImageApp(
+        appName,
+        input.image,
+        input.version,
+        user,
+        input.databaseId,
+        input.tags
+      );
+    }
+
+    throw new InternalServerError("No se creó la app");
   }
 
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async destroyApp(
-    @Arg('input', (type) => DestroyAppInput) input: DestroyAppInput,
+    @Arg("input", (type) => DestroyAppInput) input: DestroyAppInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
     const appToDelete = await this.appRepository.get(input.appId);
@@ -428,7 +469,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => Boolean)
   async removeAppProxyPort(
-    @Arg('input', (type) => RemoveAppProxyPortInput)
+    @Arg("input", (type) => RemoveAppProxyPortInput)
     input: RemoveAppProxyPortInput,
     @Ctx() context: DokkuContext
   ) {
@@ -451,7 +492,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => Boolean)
   async changeBranch(
-    @Arg('input', (type) => UpdateBranchInput)
+    @Arg("input", (type) => UpdateBranchInput)
     input: UpdateBranchInput,
     @Ctx() context: DokkuContext
   ) {
@@ -476,7 +517,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async removeDomain(
-    @Arg('input', (type) => RemoveDomainInput)
+    @Arg("input", (type) => RemoveDomainInput)
     input: RemoveDomainInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
@@ -494,7 +535,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async setDomain(
-    @Arg('input', (type) => SetDomainInput)
+    @Arg("input", (type) => SetDomainInput)
     input: SetDomainInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
@@ -512,7 +553,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async linkDatabase(
-    @Arg('input', (type) => LinkDatabaseInput)
+    @Arg("input", (type) => LinkDatabaseInput)
     input: LinkDatabaseInput,
     @Ctx() context: DokkuContext
   ) {
@@ -552,7 +593,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async unlinkDatabase(
-    @Arg('input', (type) => UnlinkDatabaseInput)
+    @Arg("input", (type) => UnlinkDatabaseInput)
     input: UnlinkDatabaseInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
@@ -592,7 +633,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async rebuildApp(
-    @Arg('input', (type) => RebuildAppInput)
+    @Arg("input", (type) => RebuildAppInput)
     input: RebuildAppInput,
     @Ctx() context: DokkuContext
   ) {
@@ -614,7 +655,7 @@ export class AppResolver {
   @Authorized()
   @Mutation((returns) => BooleanResult)
   async restartApp(
-    @Arg('input', (type) => RestartAppInput)
+    @Arg("input", (type) => RestartAppInput)
     input: RestartAppInput,
     @Ctx() context: DokkuContext
   ): Promise<BooleanResult> {
@@ -635,7 +676,7 @@ export class AppResolver {
 
   @Authorized()
   @Query((returns) => [LogPayload])
-  createLogs(@Arg('appId', (type) => ID) appId: string): LogPayload[] {
+  createLogs(@Arg("appId", (type) => ID) appId: string): LogPayload[] {
     return this.appRepository.getCreateLogs(appId);
   }
 
@@ -650,7 +691,7 @@ export class AppResolver {
   })
   appCreateLogs(
     @Root() payload: AppCreatedPayload,
-    @Arg('appId', (type) => ID) appId: string
+    @Arg("appId", (type) => ID) appId: string
   ): LogPayload {
     return payload.appCreateLogs;
   }

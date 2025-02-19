@@ -21,6 +21,23 @@ export class DokkuAppRepository {
     return true;
   }
 
+  async createFromImage(
+    appName: string,
+    image: string,
+    options?: SSHExecOptions
+  ): Promise<boolean> {
+    const resultAppsCreate = await execSSHCommand(
+      `git:from-image ${appName} ${image}`,
+      options
+    );
+
+    if (resultAppsCreate.code === 1) {
+      throw new InternalServerError(resultAppsCreate.stderr);
+    }
+
+    return true;
+  }
+
   async destroy(appName: string): Promise<boolean> {
     const resultAppsDestroy = await execSSHCommand(
       `--force apps:destroy ${appName}`

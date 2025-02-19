@@ -54,8 +54,6 @@ export default function CreateApp() {
             label="Docker"
             type={AppTypes.Docker}
             icon={<DockerIcon size={40} />}
-            disabled
-            badge={<Chip color="danger">Proximamente</Chip>}
           />
         </div>
       </div>

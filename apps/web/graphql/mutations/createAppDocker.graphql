@@ -1,0 +1,5 @@
+mutation createAppDocker($input: CreateAppDockerInput!) {
+  createAppDocker(input: $input) {
+    appId
+  }
+}

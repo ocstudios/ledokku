@@ -1,4 +1,4 @@
-import { DokkuProxyRepository } from "./../lib/dokku/dokku.proxy.repository";
+import { DokkuProxyRepository } from "../lib/dokku/dokku.proxy.repository";
 import { App, AppStatus } from "@prisma/client";
 import { $log } from "@tsed/common";
 import { Job } from "bullmq";
@@ -6,31 +6,28 @@ import { PubSub } from "graphql-subscriptions";
 import { SubscriptionTopics } from "../data/models/subscription_topics";
 import { IQueue, Queue } from "../lib/queues/queue.decorator";
 import { AppCreatedPayload } from "../modules/apps/data/models/app_created.payload";
-import { DokkuAppRepository } from "./../lib/dokku/dokku.app.repository";
-import { DokkuGitRepository } from "./../lib/dokku/dokku.git.repository";
-import { ActivityRepository } from "./../modules/activity/data/repositories/activity.repository";
-import { AppRepository } from "./../modules/apps/data/repositories/app.repository";
+import { DokkuAppRepository } from "../lib/dokku/dokku.app.repository";
+import { DokkuGitRepository } from "../lib/dokku/dokku.git.repository";
+import { ActivityRepository } from "../modules/activity/data/repositories/activity.repository";
+import { AppRepository } from "../modules/apps/data/repositories/app.repository";
 import { SSHExecOptions } from "node-ssh";
-import { NotFound } from "@tsed/exceptions";
-import { ProxyPort } from "./../lib/dokku/models/proxy_ports.model";
-import { DatabaseRepository } from "./../modules/databases/data/repositories/database.repository";
-import { LinkDatabaseQueue } from "./link_database.queue";
+import { ProxyPort } from "../lib/dokku/models/proxy_ports.model";
+import { DatabaseRepository } from "../modules/databases/data/repositories/database.repository";
 import { DokkuDatabaseRepository } from "../repositories";
 
 interface QueueArgs {
   appId: string;
   userName: string;
-  token: string;
+  image: string;
   deleteOnFailed?: boolean;
   databaseId?: string;
 }
 
 @Queue()
-export class DeployAppQueue extends IQueue<QueueArgs, App> {
+export class DeployImageQueue extends IQueue<QueueArgs, App> {
   constructor(
     private appRepository: AppRepository,
     private databaseRepository: DatabaseRepository,
-    private dokkuGitRepository: DokkuGitRepository,
     private pubsub: PubSub,
     private activityRepository: ActivityRepository,
     private dokkuDatabaseRepository: DokkuDatabaseRepository,
@@ -66,9 +63,9 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
   });
 
   protected async execute(job: Job<QueueArgs, any>) {
-    const { appId, userName, token } = job.data;
+    const { appId, userName, image } = job.data;
 
-    $log.info(`Iniciando el lanzamiento de la app ${appId}`);
+    $log.info(`Iniciando el lanzamiento de la imagen ${appId}`);
 
     const app = await this.appRepository.get(appId);
 
@@ -78,18 +75,9 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
 
     this.appRepository.clearCreateLogs(appId);
 
-    const appMetaGithub = await this.appRepository.get(appId).AppMetaGithub();
-
-    const { branch, repoName, repoOwner } = appMetaGithub;
-    const branchName = branch ? branch : "main";
-
-    await this.dokkuGitRepository.auth(userName, token);
-    await this.dokkuGitRepository.unlock(app.name);
-
-    await this.dokkuGitRepository.sync(
+    await this.dokkuAppRepository.createFromImage(
       app.name,
-      `https://github.com/${repoOwner}/${repoName}.git`,
-      branchName,
+      image,
       this.sshOptions(appId)
     );
 
@@ -114,9 +102,7 @@ export class DeployAppQueue extends IQueue<QueueArgs, App> {
         .catch((e) => $log.warn(e));
     }
 
-    $log.info(
-      `Finalizando de crear ${app.name} desde https://github.com/${repoOwner}/${repoName}.git`
-    );
+    $log.info(`Finalizando de crear ${app.name} desde la imagen ${image}`);
 
     return app;
   }

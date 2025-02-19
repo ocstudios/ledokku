@@ -17,6 +17,7 @@ import {
 import { SyncServerQueue } from "./../../../../queues/sync_server.queue";
 import { GithubError } from "./../models/github_error";
 import { GithubOAuthLoginResponse } from "./../models/github_oauth_login_response";
+import { DeployImageQueue } from "../../../../queues/deploy_image.queue";
 
 @Injectable()
 export class GithubRepository {
@@ -24,7 +25,8 @@ export class GithubRepository {
     private prisma: PrismaClient,
     private deployAppQueue: DeployAppQueue,
     private syncServerQueue: SyncServerQueue,
-    private settingsRepository: SettingsRepository
+    private settingsRepository: SettingsRepository,
+    private deployImageQueue: DeployImageQueue
   ) {}
 
   private installationAuth = createAppAuth({
@@ -33,6 +35,48 @@ export class GithubRepository {
     clientId: GITHUB_APP_CLIENT_ID,
     clientSecret: GITHUB_APP_CLIENT_SECRET,
   });
+
+  async createImageApp(
+    appName: string,
+    image: string,
+    version: string,
+    user: User,
+    databaseId?: string,
+    tags?: string[],
+  ) {
+    return this.prisma.app
+      .create({
+        data: {
+          userId: user.id,
+          name: appName,
+          type: "DOCKER",
+          tags: {
+            connectOrCreate: tags?.map((it) => ({
+              where: {
+                name: it,
+              },
+              create: {
+                name: it,
+              },
+            })),
+          },
+        },
+        include: {
+          AppMetaGithub: true,
+        },
+      })
+      .then(async (res) => {
+        await this.deployImageQueue.add({
+          appId: res.id,
+          userName: user.username,
+          deleteOnFailed: false,
+          image: `${image}:${version}`,
+          databaseId,
+        });
+
+        return res;
+      });
+  }
 
   async createApp(
     installationId: string,
@@ -287,10 +331,7 @@ export class GithubRepository {
       .AppMetaGithub();
   }
 
-  async branches(
-    repoFullName: string,
-    installationId: string
-  ) {
+  async branches(repoFullName: string, installationId: string) {
     const installationAuthentication = await this.installationAuth({
       type: "installation",
       installationId,
