@@ -169,7 +169,7 @@ export class DatabaseResolver {
     await this.createDatabaseQueue.add({
       databaseId: createdDb.id,
       image: input.image,
-      userId: context.auth.user.id,
+      userId: context.auth!.user.id,
     });
 
     return createdDb;

@@ -1,33 +1,33 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   $log,
   BeforeRoutesInit,
   Logger,
   OnReady,
   PlatformApplication,
-} from '@tsed/common';
-import { Configuration, Inject, registerProvider } from '@tsed/di';
-import '@tsed/platform-express';
-import '@tsed/typegraphql';
-import { TypeGraphQLService } from '@tsed/typegraphql';
-import { ApolloServerPluginInlineTrace } from 'apollo-server-core';
-import { ExpressContext } from 'apollo-server-express';
-import cors from 'cors';
-import express from 'express';
-import { execute, GraphQLError, subscribe } from 'graphql';
-import { PubSub } from 'graphql-subscriptions';
-import { useServer } from 'graphql-ws/lib/use/ws';
-import * as http from 'http';
-import { Server as WebSocketServer } from 'ws';
-import './config/appender';
-import { authChecker } from './config/auth_checker';
-import { ContextFactory } from './config/context_factory';
-import { CORS_ORIGIN, IS_PRODUCTION, PORT } from './constants';
-import { WebhookController } from './controllers/webhook.controller';
-import prisma from './lib/prisma';
-import * as modules from './modules';
-import { SyncServerQueue } from './queues/sync_server.queue';
-import { startSmeeClient } from './smeeClient';
+} from "@tsed/common";
+import { Configuration, Inject, registerProvider } from "@tsed/di";
+import "@tsed/platform-express";
+import "@tsed/typegraphql";
+import { TypeGraphQLService } from "@tsed/typegraphql";
+import { ApolloServerPluginInlineTrace } from "apollo-server-core";
+import { ExpressContext } from "apollo-server-express";
+import cors from "cors";
+import express from "express";
+import { execute, GraphQLError, subscribe } from "graphql";
+import { PubSub } from "graphql-subscriptions";
+import { useServer } from "graphql-ws/lib/use/ws";
+import * as http from "http";
+import { Server as WebSocketServer } from "ws";
+import "./config/appender";
+import { authChecker } from "./config/auth_checker";
+import { ContextFactory } from "./config/context_factory";
+import { CORS_ORIGIN, IS_PRODUCTION, PORT } from "./constants";
+import { WebhookController } from "./controllers/webhook.controller";
+import prisma from "./lib/prisma";
+import * as modules from "./modules";
+import { SyncServerQueue } from "./queues/sync_server.queue";
+import { startSmeeClient } from "./smeeClient";
 
 export const pubsub = new PubSub();
 
@@ -47,15 +47,15 @@ registerProvider({
     logRequest: false,
   },
   rootDir: __dirname,
-  acceptMimes: ['application/json'],
+  acceptMimes: ["application/json"],
   mount: {
-    '/api': [WebhookController],
+    "/api": [WebhookController],
   },
   typegraphql: {
     default: {
-      path: '/graphql',
+      path: "/graphql",
       buildSchemaOptions: {
-        dateScalarMode: 'isoDate',
+        dateScalarMode: "isoDate",
         authChecker,
         pubSub: pubsub,
       },
@@ -69,9 +69,9 @@ registerProvider({
       formatError: (err: GraphQLError) => {
         $log.error(err.message, err.path, err.stack, err.extensions);
 
-        if (err.message.startsWith('!     ')) {
+        if (err.message.startsWith("!     ")) {
           return {
-            message: err.message.replace(/^!\s*/, ''),
+            message: err.message.replace(/^!\s*/, ""),
             extensions: err.extensions,
             locations: err.locations,
             path: err.path,
@@ -108,16 +108,16 @@ export class Server implements BeforeRoutesInit, OnReady {
           origin: CORS_ORIGIN,
         })
       )
-      .use(express.json({ limit: '1mb' }))
-      .use(express.urlencoded({ limit: '1mb', extended: true }));
+      .use(express.json({ limit: "1mb" }))
+      .use(express.urlencoded({ limit: "1mb", extended: true }));
   }
 
   async $onReady(): Promise<void | Promise<any>> {
-    const schema = this.typegql.getSchema('default');
+    const schema = this.typegql.getSchema("default");
 
     const wsServer = new WebSocketServer({
       server: this.httpServer,
-      path: '/graphql',
+      path: "/graphql",
     });
 
     useServer(
@@ -136,9 +136,9 @@ export class Server implements BeforeRoutesInit, OnReady {
 
     await this.syncServerQueue.add();
 
-    this.logger.appenders.set('std-log', {
-      type: 'publisher_appender',
-      level: ['debug', 'info', 'trace', 'error', 'warning'],
+    this.logger.appenders.set("std-log", {
+      type: "publisher_appender",
+      level: ["debug", "info", "trace", "error", "warning"],
     });
   }
 }

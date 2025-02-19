@@ -1,7 +1,7 @@
 import { $log } from "@tsed/common";
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
-import { App, AppMetaGithub, PrismaClient, Roles, User } from "@prisma/client";
+import { App, AppMetaGithub, PrismaClient, User } from "@prisma/client";
 import { Injectable } from "@tsed/di";
 import { Unauthorized } from "@tsed/exceptions";
 import fetch from "node-fetch";
@@ -28,7 +28,7 @@ export class GithubRepository {
   ) {}
 
   private installationAuth = createAppAuth({
-    appId: GITHUB_APP_ID,
+    appId: GITHUB_APP_ID!,
     privateKey: formatGithubPem(GITHUB_APP_PEM),
     clientId: GITHUB_APP_CLIENT_ID,
     clientSecret: GITHUB_APP_CLIENT_SECRET,
@@ -71,7 +71,7 @@ export class GithubRepository {
               },
             })),
           },
-          AppMetaGithub: {
+          appMetaGithub: {
             create: {
               repoName: repoData.repoName,
               repoOwner: repoData.owner,
@@ -82,13 +82,13 @@ export class GithubRepository {
           },
         },
         include: {
-          AppMetaGithub: true,
+          appMetaGithub: true,
         },
       })
       .then(async (res) => {
         await this.deployAppQueue.add({
           appId: res.id,
-          userName: user.username,
+          userName: user.email,
           token: installationAuthentication.token,
           deleteOnFailed: false,
         });
@@ -287,10 +287,7 @@ export class GithubRepository {
       .AppMetaGithub();
   }
 
-  async branches(
-    repoFullName: string,
-    installationId: string
-  ) {
+  async branches(repoFullName: string, installationId: string) {
     const installationAuthentication = await this.installationAuth({
       type: "installation",
       installationId,

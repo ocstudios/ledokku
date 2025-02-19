@@ -1,10 +1,8 @@
-import { Roles } from '@prisma/client';
-import { $log } from '@tsed/common';
-import { AuthChecker } from 'type-graphql';
-import { DokkuContext } from '../data/models/dokku_context';
-import prisma from '../lib/prisma';
+import { AuthChecker } from "type-graphql";
+import { DokkuContext } from "../data/models/dokku_context";
+import prisma from "../lib/prisma";
 
-export const authChecker: AuthChecker<DokkuContext, Roles> = async (
+export const authChecker: AuthChecker<DokkuContext, "admin" | "user"> = async (
   { context },
   roles
 ): Promise<boolean> => {
@@ -12,14 +10,20 @@ export const authChecker: AuthChecker<DokkuContext, Roles> = async (
 
   const settings = await prisma.settings.findFirst();
 
+  const userRoles = context.auth.user.role as
+    | "admin"
+    | "user"
+    | null
+    | undefined;
+
   if (
-    !settings.allowedEmails
+    !settings?.allowedEmails
       .map((it) => it.toLowerCase())
       .includes(context.auth.user.email.toLowerCase()) &&
-    context.auth.user.role !== Roles.OWNER
+    userRoles !== "admin"
   ) {
     return false;
   }
-  
-  return roles.length === 0 || roles.includes(context.auth.user.role);
+
+  return roles.length === 0 || roles.includes(userRoles ?? "user");
 };

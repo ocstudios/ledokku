@@ -1,10 +1,9 @@
-import { Roles } from '@prisma/client';
-import { ResolverService } from '@tsed/typegraphql';
-import { FieldResolver, Query, Mutation, Arg, Authorized } from 'type-graphql';
-import { User } from '../../data/models/user';
-import { UserRepository } from '../../data/repositories/user_repository';
-import { Settings } from './data/models/settings';
-import { SettingsRepository } from './data/repositories/settings.repository';
+import { ResolverService } from "@tsed/typegraphql";
+import { FieldResolver, Query, Mutation, Arg, Authorized } from "type-graphql";
+import { User } from "../../data/models/user";
+import { UserRepository } from "../../data/repositories/user_repository";
+import { Settings } from "./data/models/settings";
+import { SettingsRepository } from "./data/repositories/settings.repository";
 
 @ResolverService(Settings)
 export class SettingsResolver {
@@ -19,17 +18,17 @@ export class SettingsResolver {
     return this.settingsRepository.get();
   }
 
-  @Authorized(Roles.OWNER)
+  @Authorized("admin")
   @Mutation((returns) => String)
-  async addAllowedEmail(@Arg('email', (type) => String) email: string) {
+  async addAllowedEmail(@Arg("email", (type) => String) email: string) {
     this.settingsRepository.addAllowedEmail(email);
 
     return email;
   }
 
-  @Authorized(Roles.OWNER)
+  @Authorized("admin")
   @Mutation((returns) => String)
-  async removeAllowedEmail(@Arg('email', (type) => String) email: string) {
+  async removeAllowedEmail(@Arg("email", (type) => String) email: string) {
     this.settingsRepository.removeAllowedEmail(email);
 
     return email;

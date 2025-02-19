@@ -1,6 +1,3 @@
-import { User } from '@prisma/client';
+import { auth } from "../../lib/auth";
 
-export class AuthContext {
-  token: string;
-  user: User;
-}
+export type AuthContext = typeof auth.$Infer.Session;

@@ -1,43 +1,39 @@
-import { Roles, User as UserClass } from '@prisma/client';
-import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
-import { GraphQLDateTime } from '../../utils';
+import { User as UserClass } from "@prisma/client";
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
+import { GraphQLDateTime } from "../../utils";
 
 @ObjectType()
 export class User implements UserClass {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
-  @Field((type) => GraphQLDateTime)
-  createdAt: Date;
+  @Field(() => String)
+  name: string;
 
-  @Field((type) => GraphQLDateTime)
-  updatedAt: Date;
-
-  @Field((type) => String)
-  username: string;
-
-  @Field((type) => String)
-  avatarUrl: string;
-
-  @Field((type) => String)
+  @Field(() => String)
   email: string;
 
-  @Field((type) => String)
-  githubId: string;
+  @Field(() => Boolean)
+  emailVerified: boolean;
 
-  @Field((type) => String)
-  githubAccessToken: string;
+  @Field(() => String, { nullable: true })
+  image: string | null;
 
-  @Field((type) => String)
-  refreshToken: string;
+  @Field(() => String, { nullable: true })
+  role: string | null;
 
-  @Field((type) => GraphQLDateTime)
-  refreshTokenExpiresAt: Date;
+  @Field(() => Boolean, { nullable: true })
+  banned: boolean | null;
 
-  @Field((type) => Roles)
-  role: Roles;
+  @Field(() => String, { nullable: true })
+  banReason: string | null;
+
+  @Field(() => GraphQLDateTime, { nullable: true })
+  banExpires: Date | null;
+
+  @Field(() => GraphQLDateTime)
+  createdAt: Date;
+
+  @Field(() => GraphQLDateTime)
+  updatedAt: Date;
 }
-
-registerEnumType(Roles, {
-  name: 'Roles',
-});

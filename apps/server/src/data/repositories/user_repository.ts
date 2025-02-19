@@ -1,5 +1,5 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { Injectable } from '@tsed/di';
+import { Prisma, PrismaClient } from "@prisma/client";
+import { Injectable } from "@tsed/di";
 
 @Injectable()
 export class UserRepository {
@@ -12,8 +12,14 @@ export class UserRepository {
   }
 
   async getByGithubId(id: string) {
-    return this.prisma.user.findUnique({
-      where: { githubId: id },
+    return this.prisma.user.findFirst({
+      where: {
+        accounts: {
+          some: {
+            accountId: id,
+          },
+        },
+      },
     });
   }
 

@@ -28,7 +28,7 @@ export class GithubResolver {
   async githubInstallationId(
     @Ctx() context: DokkuContext
   ): Promise<Installation> {
-    const user = await this.userRepository.get(context.auth.user.id);
+    const user = await this.userRepository.get(context.auth!.user.id);
 
     return (await this.ghRepository.installations(user.githubAccessToken))
       .installations[0];
